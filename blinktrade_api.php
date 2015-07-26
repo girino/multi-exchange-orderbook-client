@@ -12,7 +12,7 @@ function blinktrade_api_query($currency, $method, array $req = array()) {
 	if (is_null($ch)) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; BiAffNet API PHP client; '.php_uname('s').'; PHP/'.phpversion().')');
+		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; Blinktrade API PHP client; '.php_uname('s').'; PHP/'.phpversion().')');
 	}
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
