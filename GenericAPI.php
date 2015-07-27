@@ -2,6 +2,7 @@
 
 require_once('blinktrade_api.php');
 require_once('bitfinex_api.php');
+require_once('bitcointoyou_api.php');
 
 abstract class Order {
 	private $currency_from;
@@ -98,6 +99,38 @@ class BitfinexOrder extends Order {
 	}
 }
 
+class B2UOrder extends Order {
+	
+	private $order_map;
+	private $price_currency = 'BRL';
+	private $volume_currency = 'BTC';
+	
+	public  function __construct($order, $currency_from = 'BTC', $currency_to = 'BRL') {
+		parent::__construct($currency_from, $currency_to);
+		$this->order_map = $order;
+	}
+	
+	public function getPrice($currency) {
+		if 	($currency == $this->price_currency) {
+			return $this->order_map[0];
+		} else {
+			return 1.0 / $this->order_map[0];
+		}
+	}
+	
+	public function getVolume($currency) {
+		if 	($currency == $this->volume_currency) {
+			return $this->order_map[1];
+		} else {
+			return $this->order_map[0] * $this->order_map[1];
+		}
+	}
+	
+	public function getId() {
+		return 0;
+	}
+}
+
 abstract class GenericOrderbook {
 	private $orderbook = array();
 	abstract public function getOrderBook($operation);
@@ -164,6 +197,18 @@ class BitfinexOrderbook extends GenericOrderbook {
 	}
 }
 
+class B2UOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = b2u_api_query('orderbook');
+		$orders = $orderbook[$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new B2UOrder($order));
+		}
+		return $ret;
+	}
+}
+
 abstract class FeeCalculator {
 	public function applyDepositFee($value, $currency) { return $value; }
 	public function applyWithdrawalFee($value, $currency) { return $value; }
@@ -199,26 +244,61 @@ class BitfinexFeeCalculator extends FeeCalculator {
 	}
 }
 
-$book1 = new FoxBitOrderbook();
-$fee1 = new FoxbitFeeCalculator();
-$brl_buy = $fee1->applyExecutingOrderFee($argv[1], 'BRL');
-$btc_buy = $book1->getVolumeOrdered($brl_buy, 'BRL', 'asks');
-$btc_buy = $fee1->applyWithdrawalFee($btc_buy, 'BTC');
-print $argv[1] . " BRL => $btc_buy BTC" . "\n";
-$book2 = new BitFinexOrderbook();
-$fee2 = new BitfinexFeeCalculator();
-$btc_buy = $fee2->applyExecutingOrderFee($btc_buy, 'BTC');
-$usd_buy = $book2->getVolumeOrdered($btc_buy, 'BTC', 'bids');
-print "$btc_buy BTC => $usd_buy USD\n";
-print "Buy rate: " . ($argv[1]/$usd_buy) . "\n";
 
-// sell
-$usd_sell = $fee2->applyExecutingOrderFee($usd_buy, 'USD');
-$btc_sell = $book2->getVolumeOrdered($usd_sell, 'USD', 'asks');
-$btc_sell = $fee2->applyWithdrawalFee($btc_sell, 'BTC');
-print "$usd_buy USD => $btc_sell BTC" . "\n";
-$btc_sell = $fee1->applyExecutingOrderFee($btc_sell, 'BTC');
-$brl_sell = $book1->getVolumeOrdered($btc_sell, 'BTC', 'bids');
-$brl_sell = $fee1->applyWithdrawalFee($brl_sell, 'BRL');
-print "$btc_sell BTC => $brl_sell BRL\n";
-print "Sell rate: " . ($brl_sell/$usd_buy) . "\n";
+class B2UFeeCalculator extends FeeCalculator {
+	private $order_fee = 0.0025;
+	private $executing_order_fee = 0.006;
+	private $tx_fee = 0.0001;
+	private $withdrawal_fee = 0.0299;
+	public function applyWithdrawalFee($value, $currency) { 
+		if ($currency == 'BTC')
+			return $value - $this->tx_fee;
+		else 
+			return $value * (1-$this->withdrawal_fee); 
+	}
+	public function applyExecutingOrderFee($value, $currency) {
+		return $value * (1-$this->order_fee);
+	}
+	public function applyExecutedOrderFee($value, $currency) {
+		return $value * (1-$this->executing_order_fee);
+	}
+}
+
+$foxbit = array( new FoxBitOrderbook(),  new FoxbitFeeCalculator(), 'BRL' );
+$b2u = array( new B2UOrderbook(),  new B2UFeeCalculator(), 'BRL' );
+$bitfinex = array( new BitFinexOrderbook(),  new BitFinexFeeCalculator(), 'USD' );
+
+$pairs = array( array($foxbit, $bitfinex),
+		array($b2u, $bitfinex),
+		array($b2u, $foxbit),
+		array($bitfinex, $foxbit),
+		array($bitfinex, $b2u),
+		array($foxbit, $b2u),
+	);
+
+function getValueOrders($value, $currency_pair, $book, $feecalc, $operation, $withdrawal = true) {
+	$buy = $feecalc->applyExecutingOrderFee($value, $currency_pair[0]);
+	$bought = $book->getVolumeOrdered($buy, $currency_pair[0], $operation);
+	if ($withdrawal)
+		$bought = $feecalc->applyWithdrawalFee($bought,  $currency_pair[1]);
+	return $bought;
+}
+
+$value = $argv[1];
+foreach ($pairs as $pair) {
+	$book_from = $pair[0][0];
+	$fee_from = $pair[0][1];
+	$currency_pair_from = array($pair[0][2], 'BTC');
+	$bought = getValueOrders($value, $currency_pair_from, $book_from, $fee_from, 'asks');
+	$book_to = $pair[1][0];
+	$fee_to = $pair[1][1];
+	$currency_pair_to = array('BTC', $pair[1][2], 'BTC');
+	$sold = getValueOrders($bought, $currency_pair_to, $book_to, $fee_to, 'bids', false);
+
+	$rate = $value / $sold;
+	$rrate = $sold / $value;
+	
+	print "$value " . ($pair[0][2]) . " => $sold " . $pair[1][2] . "\n";
+	print "Rate: $rate ($rrate)\n";
+	print "\n";
+}
