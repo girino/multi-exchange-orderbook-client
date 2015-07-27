@@ -249,24 +249,31 @@ class B2UFeeCalculator extends FeeCalculator {
 	private $order_fee = 0.0025;
 	private $executing_order_fee = 0.006;
 	private $tx_fee = 0.0001;
-	private $withdrawal_fee = 0.0299;
+	private $withdrawal_fee = 0.0189;
+	private $deposit_fee = 0.0189;
+	public function applyDepositFee($value, $currency) { 
+		if ($currency == 'BTC')
+			return $value;
+		else 
+			return $value * (1-$this->deposit_fee); 
+	}
 	public function applyWithdrawalFee($value, $currency) { 
 		if ($currency == 'BTC')
 			return $value - $this->tx_fee;
 		else 
 			return $value * (1-$this->withdrawal_fee); 
 	}
-	public function applyExecutingOrderFee($value, $currency) {
+	public function applyExecutedOrderFee($value, $currency) {
 		return $value * (1-$this->order_fee);
 	}
-	public function applyExecutedOrderFee($value, $currency) {
+	public function applyExecutingOrderFee($value, $currency) {
 		return $value * (1-$this->executing_order_fee);
 	}
 }
 
-$foxbit = array( new FoxBitOrderbook(),  new FoxbitFeeCalculator(), 'BRL' );
-$b2u = array( new B2UOrderbook(),  new B2UFeeCalculator(), 'BRL' );
-$bitfinex = array( new BitFinexOrderbook(),  new BitFinexFeeCalculator(), 'USD' );
+$foxbit = array( new FoxBitOrderbook(),  new FoxbitFeeCalculator(), 'BRL', 'FOXBIT' );
+$b2u = array( new B2UOrderbook(),  new B2UFeeCalculator(), 'BRL', 'B2U' );
+$bitfinex = array( new BitFinexOrderbook(),  new BitFinexFeeCalculator(), 'USD', 'BITFINEX' );
 
 $pairs = array( array($foxbit, $bitfinex),
 		array($b2u, $bitfinex),
@@ -277,10 +284,14 @@ $pairs = array( array($foxbit, $bitfinex),
 	);
 
 function getValueOrders($value, $currency_pair, $book, $feecalc, $operation, $withdrawal = true) {
-	$buy = $feecalc->applyExecutingOrderFee($value, $currency_pair[0]);
+	$buy = $feecalc->applyDepositFee($value, $currency_pair[0]);
+	$buy = $feecalc->applyExecutingOrderFee($buy, $currency_pair[0]);
+	//print "$buy\n";
 	$bought = $book->getVolumeOrdered($buy, $currency_pair[0], $operation);
+	//print "$bought\n";
 	if ($withdrawal)
 		$bought = $feecalc->applyWithdrawalFee($bought,  $currency_pair[1]);
+	//print "$bought\n";
 	return $bought;
 }
 
@@ -297,7 +308,8 @@ foreach ($pairs as $pair) {
 
 	$rate = $value / $sold;
 	$rrate = $sold / $value;
-	
+
+	print $pair[0][3] . " => " . $pair[1][3] . "\n";
 	print "$value " . ($pair[0][2]) . " => $sold " . $pair[1][2] . "\n";
 	print "Rate: $rate ($rrate)\n";
 	print "\n";
