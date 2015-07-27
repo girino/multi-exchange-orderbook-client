@@ -40,45 +40,52 @@ function foxbit_orderbook() {
 	return $orderbook;
 }
 
+function blinktrade_prune_orders($orders, $brl_depth = -1) {
+	if ($brl_depth < 0) {
+                return $orders;
+        }
+
+	$curr_depth = 0;
+	$depth_orders = array();
+	foreach ($orders as $order) {
+		$order[3] = $order[0] * $order[1]; // volume in BRL
+		$curr_depth += $order[3];
+		$order[4] = $curr_depth;
+		array_push($depth_orders, $order);
+		if ($curr_depth >= $brl_depth) {
+			return $depth_orders;
+		}
+	}
+}
+
 function foxbit_bids($brl_depth = -1) {
 	$ret = foxbit_orderbook();
 	$bids = $ret['bids'];
-	if ($brl_depth < 0) {
-		return $bids;
-	}
-	$curr_depth = 0;
-	$depth_bids = array();
-	foreach ($bids as $bid) {
-		$bid[3] = $bid[0] * $bid[1]; // volume in BRL
-		$curr_depth += $bid[3];
-		$bid[4] = $curr_depth;
-		array_push($depth_bids, $bid);
-		if ($curr_depth >= $brl_depth) {
-			return $depth_bids;
-		}
-	}
+	return blinktrade_prune_orders($bids, $brl_depth);
 }
 
 function foxbit_asks($brl_depth = -1) {
 	$ret = foxbit_orderbook();
 	$asks = $ret['asks'];
-	if ($brl_depth < 0) {
-		return $asks;
-	}
-	$curr_depth = 0;
-	$depth_asks = array();
-	foreach ($asks as $ask) {
-		$ask[3] = $ask[0] * $ask[1]; // volume in BRL
-		$curr_depth += $ask[3];
-		$ask[4] = $curr_depth;
-		array_push($depth_asks, $ask);
-		if ($curr_depth >= $brl_depth) {
-			return $depth_asks;
-		}
-	}
+	return blinktrade_prune_orders($asks, $brl_depth);
 }
 
-print_r (foxbit_bids(10000));
-print_r (foxbit_asks(100));
+function total_volume_buy($brl_depth) {
+	$orders = foxbit_asks($brl_depth);
+	$current_volume = 0;
+	$curr_depth = 0;
+	foreach ($orders as $order) {
+		$curr_depth += $order[3];
+		if ($curr_depth <= $brl_depth) {
+			$current_volume += $order[1];
+		} else {
+			$remaining_brl = $brl_depth - ($curr_depth - $order[3]);
+			$remaining_btc = $remaining_brl / $order[0];
+			$current_volume += $remaining_btc;
+			break;
+		}
+	}
+	return $current_volume;
+}
 
 ?>
