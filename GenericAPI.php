@@ -67,7 +67,43 @@ class MBTCOrder extends Order {
 }
 class NegocieCoinsOrder extends Order {
 	public  function __construct($order) {
-		parent::__construct($order, 'USD', 'price', 'quantity');
+		parent::__construct($order, 'BRL', 'price', 'quantity');
+	}
+}
+
+class BasebitOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'BRL', 'price', 'quantity');
+	}
+}
+
+class CoinbaseOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'USD', 0, 1);
+	}
+}
+
+class KrakenOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'USD', 0, 1, 2);
+	}
+}
+
+class BtceOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'USD', 0, 1);
+	}
+}
+
+class BitstampOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'USD', 0, 1);
+	}
+}
+
+class OKCoinOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'USD', 0, 1);
 	}
 }
 
@@ -172,6 +208,86 @@ class NegocieCoinsOrderbook extends GenericOrderbook {
 		$ret = array();
 		foreach ($orders as $order) {
 			array_push($ret, new NegocieCoinsOrder($order));
+		}
+		return $ret;
+	}
+}
+
+class BasebitOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = basebit_api_query('book');
+		$orders = $orderbook['result'][$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new BasebitOrder($order));
+		}
+		return $ret;
+	}
+}
+
+class CoinbaseOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = coinbase_api_query('book', array('level' => 2));
+		$orders = $orderbook[$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new CoinbaseOrder($order));
+		}
+		return $ret;
+	}
+}
+
+class KrakenOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = kraken_api_query('Depth', array('pair' => 'XBTUSD'));
+		$orders = $orderbook['result']['XXBTZUSD'][$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new KrakenOrder($order));
+		}
+		return $ret;
+	}
+}
+
+class BtceOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = btce_api_query('depth');
+		$orders = $orderbook['btc_usd'][$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new BtceOrder($order));
+		}
+		return $ret;
+	}
+}
+
+class BitstampOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = bitstamp_api_query('order_book');
+		$orders = $orderbook[$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new BitstampOrder($order));
+		}
+		return $ret;
+	}
+}
+
+function sort_by_first($a, $b) {
+	if ($a[0] == $b[0]) {
+		return 0;
+	}
+	return ($a[0] < $b[0]) ? -1 : 1;
+}
+
+class OKCoinOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = okcoin_api_query('depth', array('symbol' => 'btc_usd'));
+		$orders = $orderbook[$operation];
+		if ($operation == 'asks') $orders = array_reverse( $orders );
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new OKCoinOrder($order));
 		}
 		return $ret;
 	}
@@ -294,14 +410,89 @@ class NegocieCoinsFeeCalculator extends FeeCalculator {
 	}
 }
 
+class BasebitFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0001);
+		$this->setFee('BRL', 'withdrawal', 0.0149, 0);
+		$this->setFee('BRL', 'deposit', 0.0149, 0);
+		$this->setFee('BTC', 'executing', 0.006, 0);
+		$this->setFee('BRL', 'executing', 0.006, 0);
+		$this->setFee('BTC', 'executed', 0.0025, 0);
+		$this->setFee('BRL', 'executed', 0.0025, 0);
+	}
+}
+
+class CoinbaseFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0001);
+		$this->setFee('BTC', 'executing', 0.0025, 0);
+		$this->setFee('USD', 'executing', 0.0025, 0);
+	}
+}
+
+class KrakenFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0001);
+		$this->setFee('USD', 'withdrawal', 0, 20);
+		$this->setFee('USD', 'deposit', 0, 20);
+		$this->setFee('BTC', 'executing', 0.0035, 0);
+		$this->setFee('USD', 'executing', 0.0035, 0);
+		$this->setFee('BTC', 'executed', 0.0035, 0);
+		$this->setFee('USD', 'executed', 0.0035, 0);
+	}
+}
+
+class BtceFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.01);
+		$this->setFee('USD', 'withdrawal', 0.02, 0);
+		$this->setFee('USD', 'deposit', 0.02, 0);
+		$this->setFee('BTC', 'executing', 0.002, 0);
+		$this->setFee('USD', 'executing', 0.002, 0);
+		$this->setFee('BTC', 'executed', 0.002, 0);
+		$this->setFee('USD', 'executed', 0.002, 0);
+	}
+}
+
+class BitstampFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0001);
+		$this->setFee('USD', 'withdrawal', 0, 15);
+		$this->setFee('USD', 'deposit', 0, 15);
+		$this->setFee('BTC', 'executing', 0.0025, 0);
+		$this->setFee('USD', 'executing', 0.0025, 0);
+		$this->setFee('BTC', 'executed', 0.0025, 0);
+		$this->setFee('USD', 'executed', 0.0025, 0);
+	}
+}
+
+class OKCoinFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0001);
+		$this->setFee('USD', 'withdrawal', 0, 15);
+		$this->setFee('USD', 'deposit', 0, 0);
+		$this->setFee('BTC', 'executing', 0.002, 0);
+		$this->setFee('USD', 'executing', 0.002, 0);
+		$this->setFee('BTC', 'executed', 0.002, 0);
+		$this->setFee('USD', 'executed', 0.002, 0);
+	}
+}
+
 $foxbit = array( new FoxBitOrderbook(),  new FoxbitFeeCalculator(), 'BRL', 'FOX' );
 $b2u = array( new B2UOrderbook(),  new B2UFeeCalculator(), 'BRL', 'B2U' );
 $mbtc = array( new MBTCOrderbook(),  new MBTCFeeCalculator(), 'BRL', 'MBTC' );
 $negocie = array( new NegocieCoinsOrderbook(),  new NegocieCoinsFeeCalculator(), 'BRL', 'NEGOCIE' );
+$basebit = array( new BasebitOrderbook(),  new BasebitFeeCalculator(), 'BRL', 'BASEBIT' );
 $bitfinex = array( new BitFinexOrderbook(),  new BitFinexFeeCalculator(), 'USD', 'BITFINEX' );
+$coinbase = array( new CoinbaseOrderbook(),  new CoinbaseFeeCalculator(), 'USD', 'COINBASE' );
+$kraken = array( new KrakenOrderbook(),  new KrakenFeeCalculator(), 'USD', 'KRAKEN' );
+$bitstamp = array( new BitstampOrderbook(),  new BitstampFeeCalculator(), 'USD', 'BITSTAMP' );
+$btce = array( new BtceOrderbook(),  new BtceFeeCalculator(), 'USD', 'BTC-E' );
+$okcoin = array( new OKCoinOrderbook(),  new OKCoinFeeCalculator(), 'USD', 'OKCOIN' );
 
-$brls = array($foxbit, $b2u, $mbtc, $negocie);
-$usds = array($bitfinex);
+$brls = array($foxbit, $b2u, $mbtc, $negocie, $basebit);
+$usds = array($bitfinex, $coinbase, $kraken, $bitstamp, $btce, $okcoin);
+//$usds = array($okcoin);
 
 $pairs = array();
 // BRL -> USD
@@ -352,8 +543,8 @@ $yahoo = yahoo_api_usdbrl();
 $buy = $yahoo[0];
 $sell = $yahoo[1];
 
-$value = $argv[1];
-$results = array();
+$best = array('rate_no_withdrawal' => 10e99);
+for ($value = 50; $value <= $argv[1]; $value+=0.1) {
 foreach ($pairs as $pair) {
 	$book_from = $pair[0][0];
 	$fee_from = $pair[0][1];
@@ -364,18 +555,25 @@ foreach ($pairs as $pair) {
 	$currency_pair_to = array('BTC', $pair[1][2]);
 	$sold = getValueOrders($bought['withdrawn'], $currency_pair_to, $book_to, $fee_to, 'bids', false);
 	
-	array_push($results, 
-	array(
+	$results = array(
 		'origin' => array('name' => $pair[0][3],
 							'results' => $bought),
 		'destination' => array('name' => $pair[1][3],
 							'results' => $sold),
 		'rate' => ($bought['initial'] / $sold['withdrawn']),
 	    'rate_no_withdrawal' => ($bought['initial'] / $sold['bought'])	
-	));
+	);
+	if ($results['rate_no_withdrawal'] > 0 && 
+	    $results['rate_no_withdrawal'] < $best['rate_no_withdrawal']) {
+		$best = $results;
+	}
 
 }
-print_r($results);
+}
+
+//print_r($results);
+
+print_r($best);
 
 print "BRL => USD (Yahoo Finance)\n";
 print $yahoo[0] . " (Buy) / " . $yahoo[1] . " (Sell)\n";
