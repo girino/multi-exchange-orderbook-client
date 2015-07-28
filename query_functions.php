@@ -58,4 +58,19 @@ function negociecoins_api_query($method, array $req = array()) {
 	return api_query($url, $req);
 }
 
+function yahoo_api_query($query) {
+	$req = array(
+			'q' => $query, 
+			'format' => 'json',
+			'env' => 'store://datatables.org/alltableswithkeys'
+	);
+	$url = "http://query.yahooapis.com/v1/public/yql";
+	return api_query($url, $req);
+}
+
+function yahoo_api_usdbrl() {
+	$results = yahoo_api_query("select * from yahoo.finance.xchange where pair ='USDBRL'");
+	return array($results['query']['results']['rate']['Ask'], 
+					$results['query']['results']['rate']['Bid']);
+}
 ?>

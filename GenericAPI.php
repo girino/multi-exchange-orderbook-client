@@ -237,6 +237,9 @@ class FoxbitFeeCalculator extends FeeCalculator {
 class BitfinexFeeCalculator extends FeeCalculator {
 	private $order_fee = 0.002;
 	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0001);
+		$this->setFee('USD', 'withdrawal', 0, 20);
+		$this->setFee('USD', 'deposit', 0, 20);
 		$this->setFee('BTC', 'executing', $this->order_fee, 0);
 		$this->setFee('USD', 'executing', $this->order_fee, 0);
 		$this->setFee('BTC', 'executed', $this->order_fee, 0);
@@ -320,19 +323,37 @@ foreach ($brls as $brl) {
 // 	}
 // }
 
-function getValueOrders($value, $currency_pair, $book, $feecalc, $operation, $withdrawal = true) {
-	$buy = $feecalc->applyDepositFee($value, $currency_pair[0]);
-	$buy = $feecalc->applyExecutingOrderFee($buy, $currency_pair[0]);
-// 	print "-----\n$buy\n";
-	$bought = $book->getVolumeOrdered($buy, $currency_pair[0], $operation);
-// 	print "$bought\n";
-	if ($withdrawal)
-		$bought = $feecalc->applyWithdrawalFee($bought,  $currency_pair[1]);
-// 	print "$bought\n-----\n";
-	return $bought;
+function effective_values($map) {
+	$map['deposit_fee'] = $map['initial'] - $map['deposited'];
+	$map['effective_rate'] = $map['sold']/$map['deposited'];
+	$map['transaction_fee'] = $map['sold'] - $map['bought'];
+	$map['no_withdrawal_rate'] = $map['bought']/$map['initial'];
+	$map['withdrawal_fee'] = $map['bought'] - $map['withdrawn'];
+	$map['withdrawn_rate'] = $map['withdrawn']/$map['initial'];
+	return $map;
 }
 
+function getValueOrders($value, $currency_pair, $book, $feecalc, $operation, $withdrawal = true) {
+	$ret = array('initial' => $value);
+	$buy = $feecalc->applyDepositFee($value, $currency_pair[0]);
+	$ret['deposited'] = $buy;
+	$bought = $book->getVolumeOrdered($buy, $currency_pair[0], $operation);
+ 	$ret['sold'] = $bought;
+	$bought = $feecalc->applyExecutingOrderFee($bought, $currency_pair[1]);
+	$ret['bought'] = $bought;
+// 	print "$bought\n";
+	$bought = $feecalc->applyWithdrawalFee($bought,  $currency_pair[1]);
+	$ret['withdrawn'] = $bought;
+// 	print "$bought\n-----\n";
+	return effective_values($ret);
+}
+
+$yahoo = yahoo_api_usdbrl();
+$buy = $yahoo[0];
+$sell = $yahoo[1];
+
 $value = $argv[1];
+$results = array();
 foreach ($pairs as $pair) {
 	$book_from = $pair[0][0];
 	$fee_from = $pair[0][1];
@@ -341,13 +362,20 @@ foreach ($pairs as $pair) {
 	$book_to = $pair[1][0];
 	$fee_to = $pair[1][1];
 	$currency_pair_to = array('BTC', $pair[1][2]);
-	$sold = getValueOrders($bought, $currency_pair_to, $book_to, $fee_to, 'bids', false);
+	$sold = getValueOrders($bought['withdrawn'], $currency_pair_to, $book_to, $fee_to, 'bids', false);
+	
+	array_push($results, 
+	array(
+		'origin' => array('name' => $pair[0][3],
+							'results' => $bought),
+		'destination' => array('name' => $pair[1][3],
+							'results' => $sold),
+		'rate' => ($bought['initial'] / $sold['withdrawn']),
+	    'rate_no_withdrawal' => ($bought['initial'] / $sold['bought'])	
+	));
 
-	$rate = $value / $sold;
-	$rrate = $sold / $value;
-
-	print $pair[0][3] . " => " . $pair[1][3] . "\n";
-	print "$value " . ($pair[0][2]) . " => $sold " . $pair[1][2] . "\n";
-	print "Rate: $rate ($rrate)\n";
-	print "\n";
 }
+print_r($results);
+
+print "BRL => USD (Yahoo Finance)\n";
+print $yahoo[0] . " (Buy) / " . $yahoo[1] . " (Sell)\n";
