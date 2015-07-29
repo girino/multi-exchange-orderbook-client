@@ -570,7 +570,7 @@ if (count($argv) <= 1) {
 	exit;
 }
 $value_max = (int)($argv[1]);
-$value_min = 50;
+$value_min = $value_max;
 if (count($argv) > 2) {
 	$value_min = $argv[2];
 }
