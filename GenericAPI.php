@@ -537,7 +537,9 @@ function getValueOrders($value, $currency_pair, $book, $feecalc, $operation, $wi
 	$buy = $feecalc->applyDepositFee($value, $currency_pair[0]);
 	$ret['deposited'] = $buy;
 	$bought = $book->getVolumeOrdered($buy, $currency_pair[0], $operation);
-	if ($bought === false) return false;
+	if ($bought === false) {
+		return false;
+	}
  	$ret['sold'] = $bought;
 	$bought = $feecalc->applyExecutingOrderFee($bought, $currency_pair[1]);
 	$ret['bought'] = $bought;
