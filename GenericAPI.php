@@ -492,7 +492,6 @@ $okcoin = array( new OKCoinOrderbook(),  new OKCoinFeeCalculator(), 'USD', 'OKCO
 
 $brls = array($foxbit, $b2u, $mbtc, $negocie, $basebit);
 $usds = array($bitfinex, $coinbase, $kraken, $bitstamp, $btce, $okcoin);
-$usds = array($coinbase);
 
 $pairs_buy = array();
 $pairs_sell = array();
@@ -607,9 +606,11 @@ for ($value = $value_min; $value <= $value_max; $value+=1) {
 
 //print_r($best);
 print "BRL => BTC => USD (" . $best_buy['origin']['name'] . " => ". $best_buy['destination']['name'] . ")\n";
+print $best_buy['origin']['results']['initial'] . " BRL => " . $best_buy['destination']['results']['initial'] . " BTC => " . $best_buy['destination']['results']['bought'] . "\n";
 print $best_buy['rate_no_withdrawal'] . " (Buy)\n";
 
 print "USD => BTC => BRL (" . $best_sell['origin']['name'] . " => ". $best_sell['destination']['name'] . ")\n";
+print $best_sell['origin']['results']['initial'] . " BRL => " . $best_sell['destination']['results']['initial'] . " BTC => " . $best_sell['destination']['results']['bought'] . "\n";
 print 1.0/$best_sell['rate_no_withdrawal'] . " (Sell)\n";
 
 print "BRL => USD (Yahoo Finance)\n";
