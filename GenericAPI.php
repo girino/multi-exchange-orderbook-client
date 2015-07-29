@@ -495,6 +495,8 @@ $usds = array($bitfinex, $coinbase, $kraken, $bitstamp, $btce, $okcoin);
 
 $pairs_buy = array();
 $pairs_sell = array();
+$pairs_arbitrage_brl = array();
+$pairs_arbitrage_usd = array();
 // BRL -> USD
 foreach ($brls as $brl) {
 	foreach ($usds as $usd) {
@@ -507,12 +509,18 @@ foreach ($brls as $brl) {
 		array_push($pairs_sell, array($usd, $brl));
 	}
 }
-// // BRL -> BRL
-// foreach ($brls as $brl1) {
-// 	foreach ($brls as $brl2) {
-// 		array_push($pairs, array($brl1, $brl2));
-// 	}
-// }
+// BRL -> BRL
+foreach ($brls as $brl1) {
+	foreach ($brls as $brl2) {
+		array_push($pairs_arbitrage_brl, array($brl1, $brl2));
+	}
+}
+// USD -> USD
+foreach ($usds as $usd1) {
+	foreach ($usds as $usd2) {
+		array_push($pairs_arbitrage_usd, array($usd1, $usd2));
+	}
+}
 
 function effective_values($map) {
 	$map['deposit_fee'] = $map['initial'] - $map['deposited'];
@@ -529,6 +537,7 @@ function getValueOrders($value, $currency_pair, $book, $feecalc, $operation, $wi
 	$buy = $feecalc->applyDepositFee($value, $currency_pair[0]);
 	$ret['deposited'] = $buy;
 	$bought = $book->getVolumeOrdered($buy, $currency_pair[0], $operation);
+	if ($bought === false) return false;
  	$ret['sold'] = $bought;
 	$bought = $feecalc->applyExecutingOrderFee($bought, $currency_pair[1]);
 	$ret['bought'] = $bought;
@@ -544,10 +553,12 @@ function buildDetailedExchangeMap($value, $pair) {
 	$fee_from = $pair[0][1];
 	$currency_pair_from = array($pair[0][2], 'BTC');
 	$bought = getValueOrders($value, $currency_pair_from, $book_from, $fee_from, 'asks');
+	if ($bought === false) return false;
 	$book_to = $pair[1][0];
 	$fee_to = $pair[1][1];
 	$currency_pair_to = array('BTC', $pair[1][2]);
 	$sold = getValueOrders($bought['withdrawn'], $currency_pair_to, $book_to, $fee_to, 'bids', false);
+	if ($sold === false) return false;
 	
 	$results = array(
 			'origin' => array('name' => $pair[0][3],
@@ -573,45 +584,63 @@ $value_min = $value_max;
 if (count($argv) > 2) {
 	$value_min = $argv[2];
 }
+$value_step = 1;
+if (count($argv) > 3) {
+	$value_step = $argv[3];
+}
 
 $yahoo = yahoo_api_usdbrl();
 $buy = $yahoo[0];
 $sell = $yahoo[1];
 
-$best_buy = array('rate_no_withdrawal' => 10e99);
-for ($value = $value_min; $value <= $value_max; $value+=1) {
-	foreach ($pairs_buy as $pair) {
-		$results = buildDetailedExchangeMap($value, $pair);
-		if ($results['rate_no_withdrawal'] > 0 && 
-		    $results['rate_no_withdrawal'] < $best_buy['rate_no_withdrawal']) {
-			$best_buy = $results;
+function find_best_rate($pairs, $min, $max, $step=1) {
+	$best = array('rate_no_withdrawal' => 10e99);
+	foreach ($pairs as $pair) {
+		//print $pair[0][3] . " => " . $pair[1][3] ."\n";
+		for ($value = $min; $value <= $max; $value+=$step) {
+			$results = buildDetailedExchangeMap($value, $pair);
+			if ($results !== false && $results['rate_no_withdrawal'] > 0 && 
+			    $results['rate_no_withdrawal'] < $best['rate_no_withdrawal']) {
+				$best = $results;
+			}
+			if ($results === false) { 
+				//print "Broken at $value\n";
+				break;
+			}
 		}
-	
 	}
+	return $best;
 }
 
-$best_sell = array('rate_no_withdrawal' => 10e99);
-for ($value = $value_min; $value <= $value_max; $value+=1) {
-	foreach ($pairs_sell as $pair) {
-		$results = buildDetailedExchangeMap($value, $pair);
-		if ($results['rate_no_withdrawal'] > 0 && 
-		    $results['rate_no_withdrawal'] < $best_sell['rate_no_withdrawal']) {
-			$best_sell = $results;
-		}
-	
-	}
-}
+$best_buy = find_best_rate($pairs_buy, $value_min, $value_max, $value_step);
+$best_sell = find_best_rate($pairs_sell, $value_min, $value_max, $value_step);
+$best_brl = find_best_rate($pairs_arbitrage_brl, $value_min, $value_max, $value_step);
+$best_usd = find_best_rate($pairs_arbitrage_usd, $value_min, $value_max, $value_step);
 
 //print_r($results);
 
 //print_r($best);
 print "BRL => BTC => USD (" . $best_buy['origin']['name'] . " => ". $best_buy['destination']['name'] . ")\n";
-print $best_buy['origin']['results']['initial'] . " BRL => " . $best_buy['destination']['results']['initial'] . " BTC => " . $best_buy['destination']['results']['bought'] . "\n";
+print $best_buy['origin']['results']['initial'] . " BRL => " . $best_buy['destination']['results']['initial'] . " BTC => " . $best_buy['destination']['results']['bought'] . " USD\n";
 print $best_buy['rate_no_withdrawal'] . " (Buy)\n";
+print "\n";
 
 print "USD => BTC => BRL (" . $best_sell['origin']['name'] . " => ". $best_sell['destination']['name'] . ")\n";
-print $best_sell['origin']['results']['initial'] . " BRL => " . $best_sell['destination']['results']['initial'] . " BTC => " . $best_sell['destination']['results']['bought'] . "\n";
+print $best_sell['origin']['results']['initial'] . " USD => " . $best_sell['destination']['results']['initial'] . " BTC => " . $best_sell['destination']['results']['bought'] . " BRL\n";
 print 1.0/$best_sell['rate_no_withdrawal'] . " (Sell)\n";
+print "\n";
 
 print "BRL => USD (Yahoo Finance)\n";
 print $yahoo[0] . " (Buy) / " . $yahoo[1] . " (Sell)\n";
+print "\n";
+
+print "BRL => BTC => BRL (" . $best_brl['origin']['name'] . " => ". $best_brl['destination']['name'] . ")\n";
+print $best_brl['origin']['results']['initial'] . " BRL => " . $best_brl['destination']['results']['initial'] . " BTC => " . $best_brl['destination']['results']['bought'] . " BRL\n";
+print 1.0/$best_brl['rate_no_withdrawal'] . " (Sell)\n";
+print "\n";
+
+print "USD => BTC => USD (" . $best_usd['origin']['name'] . " => ". $best_usd['destination']['name'] . ")\n";
+print $best_usd['origin']['results']['initial'] . " USD => " . $best_usd['destination']['results']['initial'] . " BTC => " . $best_usd['destination']['results']['bought'] . " USD\n";
+print 1.0/$best_usd['rate_no_withdrawal'] . " (Sell)\n";
+print "\n";
+
