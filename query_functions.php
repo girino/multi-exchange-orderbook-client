@@ -4,6 +4,7 @@ function api_query($url, array $req = array()) {
 
 	$post_data = http_build_query($req, '', '&');
 	$url = "$url?$post_data";
+	print "Loading: $url\n";
 	
 	// our curl handle (initialize if required)
 	static $ch = null;
