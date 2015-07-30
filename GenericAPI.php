@@ -112,7 +112,15 @@ abstract class GenericOrderbook {
 	abstract public function getOrderBook($operation);
 	protected function getOrderBookByDepth($depth, $currency, $operation) {
 		if (!array_key_exists($operation, $this->orderbook)) {
-			$this->orderbook[$operation] = $this->getOrderBook($operation);
+			try {
+				$this->orderbook[$operation] = $this->getOrderBook($operation);
+			} catch (Exception $e) {
+				print "Exception loading file: " . $e->getMessage() . "\n";
+				$this->orderbook[$operation] = false;
+			}
+		}
+		if ($this->orderbook[$operation] === false) {
+			return $this->orderbook[$operation];
 		}
 		if ($depth < 0) {
 			return $this->orderbook[$operation];
@@ -625,24 +633,28 @@ $best_usd = find_best_rate($pairs_arbitrage_usd, $value_min, $value_max, $value_
 print "BRL => BTC => USD (" . $best_buy['origin']['name'] . " => ". $best_buy['destination']['name'] . ")\n";
 print $best_buy['origin']['results']['initial'] . " BRL => " . $best_buy['destination']['results']['initial'] . " BTC => " . $best_buy['destination']['results']['bought'] . " USD\n";
 print $best_buy['rate_no_withdrawal'] . " (Buy)\n";
+print $best_buy['rate'] . " (Buy and withdraw)\n";
 print "\n";
 
 print "USD => BTC => BRL (" . $best_sell['origin']['name'] . " => ". $best_sell['destination']['name'] . ")\n";
 print $best_sell['origin']['results']['initial'] . " USD => " . $best_sell['destination']['results']['initial'] . " BTC => " . $best_sell['destination']['results']['bought'] . " BRL\n";
 print 1.0/$best_sell['rate_no_withdrawal'] . " (Sell)\n";
+print 1.0/$best_sell['rate'] . " (Sell and withdraw)\n";
 print "\n";
 
-print "BRL => USD (Yahoo Finance)\n";
+print "BRL => USD (Yahoo Finance - no bank fees considered)\n";
 print $yahoo[0] . " (Buy) / " . $yahoo[1] . " (Sell)\n";
 print "\n";
 
 print "BRL => BTC => BRL (" . $best_brl['origin']['name'] . " => ". $best_brl['destination']['name'] . ")\n";
 print $best_brl['origin']['results']['initial'] . " BRL => " . $best_brl['destination']['results']['initial'] . " BTC => " . $best_brl['destination']['results']['bought'] . " BRL\n";
 print 1.0/$best_brl['rate_no_withdrawal'] . " (Sell)\n";
+print 1.0/$best_brl['rate'] . " (Sell and withdraw)\n";
 print "\n";
 
 print "USD => BTC => USD (" . $best_usd['origin']['name'] . " => ". $best_usd['destination']['name'] . ")\n";
 print $best_usd['origin']['results']['initial'] . " USD => " . $best_usd['destination']['results']['initial'] . " BTC => " . $best_usd['destination']['results']['bought'] . " USD\n";
 print 1.0/$best_usd['rate_no_withdrawal'] . " (Sell)\n";
+print 1.0/$best_usd['rate'] . " (Sell and withdraw)\n";
 print "\n";
 
