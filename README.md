@@ -1,5 +1,5 @@
-# blinktrade-client
-This project started as a client for the blinktrade API, but it evolved nto something 
+# multi-exchange-orderbook-client
+This project started as a client for the blinktrade API, but it evolved into something 
 else entirely. Sorry for that
 
 So, this is a command line PHP utility to find arbitrage oportunities among brazilian 
