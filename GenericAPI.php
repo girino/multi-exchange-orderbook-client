@@ -1,4 +1,16 @@
 <?php
+/*
+ * Copyright (c) 2015 Girino Vey.
+ *
+ * This software is licenced under Girino's Anarchist License.
+ *
+ * Permission to use this software, modify and distribute it, or parts of
+ * it, is granted to everyone who wishes provided that the  conditions
+ * in the Girino's Anarchist License are met. Please read it on the link
+ * bellow.
+ *
+ * The full license is available at: http://girino.org/license
+ */
 
 // This class represents a single order. Its used to standardize the interface provided by json APIs
 abstract class Order {
