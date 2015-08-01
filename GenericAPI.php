@@ -270,14 +270,16 @@ function buildDetailedExchangeMap($value, $pair) {
 //   * $step => distance between the comapred values. 
 // Example: 
 //    find_best_rate($pairs, 500, 800, 100) // compare orderbook for values 500, 600, 700 and 800
-function find_best_rate($pairs, $min, $max, $step=1) {
-	$best = array('rate_no_withdrawal' => 10e99);
+function find_best_rate($pairs, $min, $max, $step=1, $considerWithdrawal=false) {
+	$rate_index = 'rate_no_withdrawal';
+	if ($considerWithdrawal) $rate_index = 'rate';
+	$best = array($rate_index => 10e99);
 	foreach ($pairs as $pair) {
 		//print $pair[0][3] . " => " . $pair[1][3] ."\n";
 		for ($value = $min; $value <= $max; $value+=$step) {
 			$results = buildDetailedExchangeMap($value, $pair);
-			if ($results !== false && $results['rate_no_withdrawal'] > 0 &&
-					$results['rate_no_withdrawal'] < $best['rate_no_withdrawal']) {
+			if ($results !== false && $results[$rate_index] > 0 &&
+					$results[$rate_index] < $best[$rate_index]) {
 						$best = $results;
 					}
 					if ($results === false) {
