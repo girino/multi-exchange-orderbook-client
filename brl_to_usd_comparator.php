@@ -92,23 +92,23 @@ $best_usd = find_best_rate($pairs_arbitrage_usd, $value_min, $value_max, $value_
 
 //print_r($best);
 print "BRL => BTC => USD (" . $best_buy['origin']['name'] . " => ". $best_buy['destination']['name'] . ")\n";
-print $best_buy['origin']['results']['initial'] . " BRL => " . $best_buy['destination']['results']['initial'] . " BTC => " . $best_buy['destination']['results']['bought'] . " USD\n";
+print $best_buy['origin']['results']['initial'] . " BRL => " . number_format($best_buy['destination']['results']['initial'], 8) . " BTC => " . number_format($best_buy['destination']['results']['bought'], 2) . " USD\n";
 $vs_yahoo = $best_buy['rate_no_withdrawal'] / $yahoo[0] * 100 - 100;
 $vs_yahoo = number_format($vs_yahoo, 2);
 $sign = '';
 if ( $vs_yahoo > 0 ) $sign = '+'; 
-print $best_buy['rate_no_withdrawal'] . " (Buy) yahoo $sign $vs_yahoo%\n";
-print $best_buy['rate'] . " (Buy and withdraw)\n";
+print number_format($best_buy['rate_no_withdrawal'], 4) . " (Buy) yahoo $sign $vs_yahoo%\n";
+print number_format($best_buy['rate'], 4) . " (Buy and withdraw)\n";
 print "\n";
 
 print "USD => BTC => BRL (" . $best_sell['origin']['name'] . " => ". $best_sell['destination']['name'] . ")\n";
-print $best_sell['origin']['results']['initial'] . " USD => " . $best_sell['destination']['results']['initial'] . " BTC => " . $best_sell['destination']['results']['bought'] . " BRL\n";
+print $best_sell['origin']['results']['initial'] . " USD => " . number_format($best_sell['destination']['results']['initial'], 8) . " BTC => " . number_format($best_sell['destination']['results']['bought'], 2) . " BRL\n";
 $vs_yahoo = (1.0/$best_sell['rate_no_withdrawal']) / $yahoo[1] * 100 - 100;
 $vs_yahoo = number_format($vs_yahoo, 2);
 $sign = '';
 if ( $vs_yahoo > 0 ) $sign = '+'; 
-print 1.0/$best_sell['rate_no_withdrawal'] . " (Sell) yahoo $sign $vs_yahoo\n";
-print 1.0/$best_sell['rate'] . " (Sell and withdraw)\n";
+print number_format(1.0/$best_sell['rate_no_withdrawal'],4) . " (Sell) yahoo $sign $vs_yahoo%\n";
+print number_format(1.0/$best_sell['rate'],4) . " (Sell and withdraw)\n";
 print "\n";
 
 print "BRL => USD (Yahoo Finance - no bank fees considered)\n";
