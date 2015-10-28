@@ -20,7 +20,7 @@ function api_query($url, array $req = array()) {
 	$url = "$url?$post_data";
 	
 	if (!array_key_exists($url, $cache)) {
-		print "Loading: $url\n";
+		//print "Loading: $url\n";
 		// our curl handle (initialize if required)
 		static $ch = null;
 		if (is_null($ch)) {

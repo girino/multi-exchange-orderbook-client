@@ -33,8 +33,9 @@ $bitstamp = array( new BitstampOrderbook(),  new BitstampFeeCalculator(), 'USD',
 $btce = array( new BtceOrderbook(),  new BtceFeeCalculator(), 'USD', 'BTC-E' );
 $okcoin = array( new OKCoinOrderbook(),  new OKCoinFeeCalculator(), 'USD', 'OKCOIN' );
 
-$brls = array($foxbit, $b2u, $mbtc, /*$negocie*/);
-$usds = array($bitfinex, $coinbase, $kraken, $bitstamp, $btce, $okcoin);
+$brls = array($foxbit);
+$usds = array($bitfinex, $okcoin);
+#$usds = array($bitfinex);
 
 $pairs_buy = array();
 $pairs_sell = array();
