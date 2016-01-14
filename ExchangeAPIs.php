@@ -185,6 +185,18 @@ class KrakenOrderbook extends GenericOrderbook {
 	}
 }
 
+class KrakenEuroOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = kraken_api_query('Depth', array('pair' => 'XBTEUR'));
+		$orders = $orderbook['result']['XXBTZEUR'][$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new KrakenOrder($order));
+		}
+		return $ret;
+	}
+}
+
 class BtceOrderbook extends GenericOrderbook {
 	public function getOrderBook($operation) {
 		$orderbook = btce_api_query('depth');

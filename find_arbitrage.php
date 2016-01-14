@@ -36,11 +36,11 @@ $pairs_arbitrage_brl = array();
 $pairs_arbitrage_usd = array();
 // BRL -> BRL
 foreach ($brls as $brl1) {
-	$brl1[1]->setFee('BRL', 'withdrawal', 0, 0);
-	$brl1[1]->setFee('BRL', 'deposit', 0, 0);
+	//$brl1[1]->setFee('BRL', 'withdrawal', 0, 0);
+	//$brl1[1]->setFee('BRL', 'deposit', 0, 0);
 	foreach ($brls as $brl2) {
-		$brl2[1]->setFee('BRL', 'withdrawal', 0, 0);
-		$brl2[1]->setFee('BRL', 'deposit', 0, 0);
+		//$brl2[1]->setFee('BRL', 'withdrawal', 0, 0);
+		//$brl2[1]->setFee('BRL', 'deposit', 0, 0);
 		array_push($pairs_arbitrage_brl, array($brl1, $brl2));
 	}
 }
@@ -59,7 +59,7 @@ $value_max = 10000;
 if (count($argv) > 1) {
 $value_max = (int)($argv[1]);
 }
-$value_min = 10;
+$value_min = $value_max;
 if (count($argv) > 2) {
 	$value_min = $argv[2];
 }
@@ -68,7 +68,7 @@ if (count($argv) > 3) {
 	$value_step = $argv[3];
 }
 
-$best_brl = find_best_rate($pairs_arbitrage_brl, $value_min, $value_max, $value_step, false);
+$best_brl = find_best_rate($pairs_arbitrage_brl, $value_min, $value_max, $value_step, true);
 //$best_usd = find_best_rate($pairs_arbitrage_usd, $value_min, $value_max, $value_step, false);
 
 date_default_timezone_set('America/Sao_Paulo');
@@ -79,7 +79,7 @@ $fh = fopen($arb_log, 'a+') or die("can't open file");
 function print_log($tolog) {
         global $fh;
         fwrite($fh, date('Y-m-d H:i:s', time()) . " - " . $tolog . "\n");
-        //print(date('Y-m-d H:i:s', time()) . " - " . $tolog . "\n");
+        print(date('Y-m-d H:i:s', time()) . " - " . $tolog . "\n");
 }
 
 if ($best_brl['rate_no_withdrawal'] < 1.0) {

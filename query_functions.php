@@ -128,4 +128,10 @@ function yahoo_api_usdbrl() {
 	return array($results['query']['results']['rate']['Ask'], 
 					$results['query']['results']['rate']['Bid']);
 }
+
+function yahoo_api_eurbrl() {
+	$results = yahoo_api_query("select * from yahoo.finance.xchange where pair ='EURBRL'");
+	return array($results['query']['results']['rate']['Ask'], 
+					$results['query']['results']['rate']['Bid']);
+}
 ?>
