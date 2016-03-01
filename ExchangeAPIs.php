@@ -83,6 +83,18 @@ class OKCoinOrder extends Order {
 	}
 }
 
+class FlowBTCOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'BRL', 0, 1);
+	}
+}
+
+class BitinkaOrder extends Order {
+	public  function __construct($order) {
+		parent::__construct($order, 'BRL', 'Price', 'Amount');
+	}
+}
+
 // orderbooks
 
 class FoxBitOrderbook extends GenericOrderbook {
@@ -241,6 +253,34 @@ class OKCoinOrderbook extends GenericOrderbook {
 	}
 }
 
+class FlowBTCOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = flowbtc_api_query('BTCBRL', 'GetOrderBook');
+		$orders = $orderbook[$operation];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new FlowBTCOrder($order));
+		}
+		return $ret;
+	}
+}
+
+class BitinkaOrderbook extends GenericOrderbook {
+	public function getOrderBook($operation) {
+		$orderbook = bitinka_api_query('order_book');
+		$tmp = 'sales';
+		if ($operation == 'bids') {
+			$tmp = 'purchases';
+		}
+		$orders = $orderbook['orders'][$tmp]['BRL'];
+		$ret = array();
+		foreach ($orders as $order) {
+			array_push($ret, new BitinkaOrder($order));
+		}
+		return $ret;
+	}
+}
+
 // fee calculators
 
 class FoxbitFeeCalculator extends FeeCalculator {
@@ -380,6 +420,42 @@ class OKCoinFeeCalculator extends FeeCalculator {
 		$this->setFee('USD', 'executing', 0.002, 0);
 		$this->setFee('BTC', 'executed', 0.002, 0);
 		$this->setFee('USD', 'executed', 0.002, 0);
+	}
+}
+
+class FlowBTCFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0003);
+		$this->setFee('BRL', 'withdrawal', 0.005, 15);
+		$this->setFee('BRL', 'deposit', 0.005, 0);
+		$this->setFee('BTC', 'executing', 0.0035, 0);
+		$this->setFee('BRL', 'executing', 0.0035, 0);
+		$this->setFee('BTC', 'executed', 0.0035, 0);
+		$this->setFee('BRL', 'executed', 0.0035, 0);
+	}
+        public function applyDepositFee($value, $currency) {
+		if ($currency == "BRL" && $value < 1000) {
+			return $value - 5.0;
+		}
+                return $this->applyFee($value, $currency, 'deposit');
+        }
+        public function applyWithdrawalFee($value, $currency) {
+		if ($currency == "BRL" && $value < 1000) {
+			return $value - 5.0;
+		}
+                return $this->applyFee($value, $currency, 'withdrawal');
+        }
+}
+
+class BitinkaFeeCalculator extends FeeCalculator {
+	public  function __construct() {
+		$this->setFee('BTC', 'withdrawal', 0, 0.0001);
+		$this->setFee('BRL', 'withdrawal', 0.015, 0);
+		$this->setFee('BRL', 'deposit', 0.015, 0);
+		$this->setFee('BTC', 'executing', 0.005, 0);
+		$this->setFee('BRL', 'executing', 0.005, 0);
+		$this->setFee('BTC', 'executed', 0.005, 0);
+		$this->setFee('BRL', 'executed', 0.005, 0);
 	}
 }
 ?>

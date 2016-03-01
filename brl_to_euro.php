@@ -26,9 +26,10 @@ $b2u = array( new B2UOrderbook(),  new B2UFeeCalculator(), 'BRL', 'B2U' );
 $mbtc = array( new MBTCOrderbook(),  new MBTCFeeCalculator(), 'BRL', 'MBTC' );
 $negocie = array( new NegocieCoinsOrderbook(),  new NegocieCoinsFeeCalculator(), 'BRL', 'NEGOCIE' );
 $basebit = array( new BasebitOrderbook(),  new BasebitFeeCalculator(), 'BRL', 'BASEBIT' );
+$flowbtc = array( new FlowBTCOrderbook(),  new FlowBTCFeeCalculator(), 'BRL', 'FLOW' );
 $kraken = array( new KrakenEuroOrderbook(),  new KrakenFeeCalculator(), 'EUR', 'KRAKEN' );
 
-//$brls = array($foxbit, $b2u, $mbtc, $negocie);
+//$brls = array($foxbit, $b2u, $mbtc, $negocie, $flowbtc);
 $brls = array($foxbit);
 $eurs = array($kraken);
 

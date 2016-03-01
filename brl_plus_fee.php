@@ -26,6 +26,8 @@ $b2u = array( new B2UOrderbook(),  new B2UFeeCalculator(), 'BRL', 'B2U' );
 $mbtc = array( new MBTCOrderbook(),  new MBTCFeeCalculator(), 'BRL', 'MBTC' );
 $negocie = array( new NegocieCoinsOrderbook(),  new NegocieCoinsFeeCalculator(), 'BRL', 'NEGOCIE' );
 $basebit = array( new BasebitOrderbook(),  new BasebitFeeCalculator(), 'BRL', 'BASEBIT' );
+$flowbtc = array( new FlowBTCOrderbook(),  new FlowBTCFeeCalculator(), 'BRL', 'FLOW' );
+$bitinka = array( new BitinkaOrderbook(),  new BitinkaFeeCalculator(), 'BRL', 'BITINKA' );
 $bitfinex = array( new BitFinexOrderbook(),  new BitFinexFeeCalculator(), 'USD', 'BITFINEX' );
 $coinbase = array( new CoinbaseOrderbook(),  new CoinbaseFeeCalculator(), 'USD', 'COINBASE' );
 $kraken = array( new KrakenOrderbook(),  new KrakenFeeCalculator(), 'USD', 'KRAKEN' );
@@ -33,7 +35,7 @@ $bitstamp = array( new BitstampOrderbook(),  new BitstampFeeCalculator(), 'USD',
 $btce = array( new BtceOrderbook(),  new BtceFeeCalculator(), 'USD', 'BTC-E' );
 $okcoin = array( new OKCoinOrderbook(),  new OKCoinFeeCalculator(), 'USD', 'OKCOIN' );
 
-$brls = array($foxbit, $b2u, $mbtc, $negocie);
+$brls = array($foxbit, $b2u, $mbtc, $negocie, $flowbtc, $bitinka);
 
 if (count($argv) <= 1) {
 	usage();

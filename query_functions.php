@@ -17,7 +17,7 @@ function api_query($url, array $req = array()) {
 
 	global $cache;
 	$post_data = http_build_query($req, '', '&');
-	$url = "$url?$post_data";
+	if ($post_data) $url = "$url?$post_data";
 	
 	if (!array_key_exists($url, $cache)) {
 		//print "Loading: $url\n";
@@ -110,6 +110,16 @@ function btce_api_query($method, array $req = array()) {
 
 function okcoin_api_query($method, array $req = array('symbol' => 'btc_usd')) {
 	$url = "https://www.okcoin.com/api/v1/$method.do";
+	return api_query($url, $req);
+}
+
+function flowbtc_api_query($currency, $method, array $req = array()) {
+	$url = "https://api.flowbtc.com:8400/$method/$currency";
+	return api_query($url, $req);
+}
+
+function bitinka_api_query($method, array $req = array()) {
+	$url = "https://www.bitinka.pe/api/apinka/$method.json";
 	return api_query($url, $req);
 }
 
